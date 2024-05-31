@@ -11,6 +11,10 @@ def get_jsonparsed_data(url):
     return json.loads(data)
 
 
+def fetch_stocks():
+    return get_jsonparsed_data(FETCH_STOCKS_URL)
+
+
 def fetch_metrics(ticker):
     incomes = get_jsonparsed_data(FETCH_INCOME_URL % ticker)
     balances = get_jsonparsed_data(FETCH_BALANCE_URL % ticker)
@@ -35,6 +39,9 @@ def fetch_metrics(ticker):
 
 
 def build_key_metrics(date, income, balance, ratio, growth):
+    grossProfit = fetch_metric("grossProfit", income)
+    totalAssets = fetch_metric("totalAssets", balance)
+
     return {
         "date": date,
         "year": date.year,
@@ -42,7 +49,7 @@ def build_key_metrics(date, income, balance, ratio, growth):
         "period": income["period"],
         "symbol": income["symbol"],
         "revenue": fetch_metric("revenue", income),
-        "gross_profit": fetch_metric("grossProfit", income),
+        "gross_profit": grossProfit,
         # 매출 총 이익률 (매출 - 매출 원가) / 매출 -> 영업 효율 척도
         "gross_profit_ratio": fetch_metric("grossProfitRatio", income),
         # earnings before interest, taxes, depreciation and amortization
@@ -57,11 +64,11 @@ def build_key_metrics(date, income, balance, ratio, growth):
         "net_income_ratio": fetch_metric("netIncomeRatio", income),
         "eps": fetch_metric("eps", income),
         "eps_diluted": fetch_metric("epsdiluted", income),
-        "assets": fetch_metric("totalAssets", balance),
+        "assets": totalAssets,
         "equity": fetch_metric("totalEquity", balance),
         "debt": fetch_metric("totalDebt", balance),
         "net_debt": fetch_metric("netDebt", balance),
-        "gp_a": fetch_metric("grossProfit", income) / fetch_metric("totalAssets", balance),
+        "gp_a": grossProfit / totalAssets if totalAssets != 0 else 0,
         # 유동 비율 : 유동 자산 / 유동 부채. 높을수록 안전
         "current_ratio": fetch_metric("currentRatio", ratio),
         # 당좌 비율 : 당좌 자산 / 유동 부채.
