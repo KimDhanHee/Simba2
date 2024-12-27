@@ -1,4 +1,6 @@
+import pandas as pd
 import pymysql
+from pandas import DataFrame
 from sqlalchemy import create_engine
 
 from .config import *
@@ -22,11 +24,12 @@ class Database:
                 f"mysql+pymysql://{DB_ID}:{DB_PW}@{HOSTNAME}:{PORT}/{DB_NAME_SIMBA}?charset=utf8"
             )
 
-    def is_corp_saved(self, ticker, year, month) -> bool:
-        sql = f"SELECT 1 FROM {TABLE_NAME_QUARTERLY_FINANCIAL_REPORT} " \
-              f"WHERE ticker='{ticker}' year='{year}' and month='{month}'"
-        rows = self.__engine.execute(sql).fetchall()
-        return len(rows) > 0
+    def fetch_ticker_financial_report(self, ticker, from_date, to_date) -> DataFrame:
+        sql = f"SELECT * FROM {TABLE_NAME_QUARTERLY_FINANCIAL_REPORT} WHERE symbol='{ticker}'"
+        if from_date is not None and to_date is not None:
+            sql = (f"SELECT * FROM {TABLE_NAME_QUARTERLY_FINANCIAL_REPORT} WHERE symbol='{ticker}' and "
+                   f"date BETWEEN '{from_date}' and '{to_date}'")
+        return pd.read_sql(sql, con=self.__engine)
 
     def insert_quarterly_financial_report(self, df):
         with self.__engine.connect():
